@@ -15,8 +15,6 @@ export ETCD="$HOST:$ETCD_PORT"
 export ETCD_PATH="${ETCD_PATH:-/deis/database}"
 export ETCD_TTL="${ETCD_TTL:-20}"
 
-export BUCKET_NAME=${BUCKET_NAME:-db_wal}
-
 # wait for etcd to be available
 until etcdctl --no-sync -C "$ETCD" ls >/dev/null 2>&1; do
   echo "database: waiting for etcd at $ETCD..."
@@ -44,7 +42,6 @@ etcd_set_default adminPass "${PG_ADMIN_PASS:-changeme123}"
 etcd_set_default user "${PG_USER_NAME:-deis}"
 etcd_set_default password "${PG_USER_PASS:-changeme123}"
 etcd_set_default name "${PG_USER_DB:-deis}"
-etcd_set_default bucketName "${BUCKET_NAME}"
 
 # stub out the confd reload script before it gets templated
 echo '#!/bin/sh' > /usr/local/bin/reload
@@ -63,36 +60,6 @@ PG_DATA_DIR=/var/lib/postgresql/9.3/main
 if [[ ! -d $PG_DATA_DIR ]]; then
   chown -R postgres:postgres /var/lib/postgresql
   sudo -u postgres /usr/bin/initdb -D $PG_DATA_DIR
-fi
-
-# ensure WAL log bucket exists
-envdir /etc/wal-e.d/env /app/bin/create_bucket "${BUCKET_NAME}"
-INIT_ID=$(etcdctl -C "$ETCD" get "$ETCD_PATH/initId" 2> /dev/null || echo none)
-echo "database: expecting initialization id: $INIT_ID"
-
-initial_backup=0
-if [[ "$(cat $PG_DATA_DIR/initialized 2> /dev/null)" != "$INIT_ID" ]]; then
-  echo "database: no existing database found or it is outdated."
-  # check if there are any backups -- if so, let's restore
-  # we could probably do better than just testing number of lines -- one line is just a heading, meaning no backups
-  BACKUP_LIST=$(envdir /etc/wal-e.d/env wal-e --terse backup-list) # if this fails, this script will exit
-  if [[ $(echo "$BACKUP_LIST" | wc -l) -gt "1" ]]; then
-    echo "database: restoring from backup..."
-    rm -rf $PG_DATA_DIR
-    sudo -u postgres envdir /etc/wal-e.d/env wal-e backup-fetch $PG_DATA_DIR LATEST
-    chown -R postgres:postgres $PG_DATA_DIR
-    chmod 0700 $PG_DATA_DIR
-    echo "restore_command = 'envdir /etc/wal-e.d/env wal-e wal-fetch \"%f\" \"%p\"'" | sudo -u postgres tee $PG_DATA_DIR/recovery.conf >/dev/null
-  else
-    echo "database: no backups found. Initializing a new database..."
-    initial_backup=1
-  fi
-  # either way, we mark the database as initialized
-  INIT_ID=$(cat /proc/sys/kernel/random/uuid)
-  echo "$INIT_ID" > $PG_DATA_DIR/initialized
-  etcdctl --no-sync -C "$ETCD" set "$ETCD_PATH/initId" "$INIT_ID" >/dev/null
-else
-  echo "database: existing data directory found. Starting postgres..."
 fi
 
 # Explicitly correct permissions on this file.  This compensates for the fact
@@ -123,14 +90,6 @@ until sudo -u postgres psql -l -t >/dev/null 2>&1; do sleep 1; done
 
 # perform a one-time reload to populate database entries
 /usr/local/bin/reload
-
-if [[ "${initial_backup}" == "1" ]] ; then
-  echo "database: performing an initial backup..."
-  # perform an initial backup
-  sudo -u postgres envdir /etc/wal-e.d/env wal-e backup-push $PG_DATA_DIR
-fi
-
-sudo -Eu postgres /app/bin/backup &
 
 echo "database: postgres is running..."
 

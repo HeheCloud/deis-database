@@ -1,0 +1,46 @@
+*.py[cod]
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# application logs
+logs/
+
+# coverage reports
+.coverage
+coverage.out
+htmlcov/
+
+# integration test droppings
+tests/example-*
+tests/*.cert
+tests/*.key
+
+# extra .py droppings from building docs
+/__init__.py
+
+# python virtual environments for testing
+venv
+
+# vagrant local config and droppings
+/config.rb
+.vagrant
+
+# bash infra
+/tests/bin/tmp
+!/tests/bin/accept/lib
+!/tests/bin/accept/commands
+
+# Terraform
+*.tfstate*

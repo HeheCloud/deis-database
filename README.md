@@ -26,7 +26,7 @@ install, and start **deis/database**.
 * **PG_ADMIN_PASS** sets the database admin user password
   (default: *changeme123*)
 * **PG_CONFIG** sets the PostgreSQL configuration file location
-  (default: */etc/postgresql/9.3/main/postgresql.conf*)
+  (default: */etc/postgresql/9.4/main/postgresql.conf*)
 * **PG_LISTEN** sets the addresses on which the database will listen
   (default: *)
 * **PG_USER_NAME** sets the database user name for Deis (default: *deis*)

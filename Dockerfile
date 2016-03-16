@@ -1,6 +1,7 @@
 FROM alpine:3.2
 
 # install common packages
+RUN echo "http://mirrors.ustc.edu.cn/alpine/v3.2/main/" > /etc/apk/repositories
 RUN apk add --update-cache curl bash sudo && rm -rf /var/cache/apk/*
 
 RUN curl -sSL -o /usr/local/bin/etcdctl http://sinacloud.net/hehe/etcd/etcdctl-v0.4.9 \

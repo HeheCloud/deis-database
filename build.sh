@@ -21,8 +21,8 @@ apk add --update-cache \
   libxslt-dev \
   openssl-dev \
   postgresql \
-  postgresql-client \
-  python-dev
+  postgresql-client
+#  python-dev
 
 # pv port.
 curl http://dl-3.alpinelinux.org/alpine/edge/testing/x86_64/pv-1.6.0-r0.apk -o /tmp/pv-1.6.0-r0.apk
@@ -31,13 +31,13 @@ apk add /tmp/pv-1.6.0-r0.apk
 /etc/init.d/postgresql stop || true
 
 # install pip
-curl -sSL https://raw.githubusercontent.com/pypa/pip/7.0.3/contrib/get-pip.py | python -
+# curl -sSL https://raw.githubusercontent.com/pypa/pip/7.0.3/contrib/get-pip.py | python -
 
 # install wal-e
 # pip install --disable-pip-version-check --no-cache-dir wal-e==0.8.1 oslo.config>=1.12.0
 
 # python port of daemontools
-pip install --disable-pip-version-check --no-cache-dir envdir
+# pip install --disable-pip-version-check --no-cache-dir envdir
 
 mkdir -p /etc/wal-e.d/env /etc/postgresql/main /var/lib/postgresql
 
